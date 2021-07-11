@@ -7,7 +7,11 @@ import os
 import plotext as plt
 import math
 import sys
+#import thread
 import multiprocessing
+import select
+import termios
+import tty
 
 
 
@@ -23,6 +27,13 @@ def execute(cmd):
     return_code = popen.wait()
     if return_code:
         raise subprocess.CalledProcessError(return_code, cmd)
+
+
+def isData():
+
+    return select.select([sys.stdin], [], [], 0) == ([sys.stdin], [], [])
+
+
 
 
 def main():
@@ -56,13 +67,53 @@ def main():
         delay = df["time"].iat[1] - df["time"].iat[0]
         numPoints = int((1/delay)-1)
 
-        maxScroll = len(df.index)-numpoints-1
+        print(numPoints)
+        input()
+
+        maxScroll = len(df.index)-numPoints-1
 
         Scroll=0
 
        # while true:
+        
+        graphData(df[:numPoints],maximum_ylim)
+
+        
+        
+
+        old_settings = termios.tcgetattr(sys.stdin)
+        try:
+            tty.setcbreak(sys.stdin.fileno())
+
+            while 1:
+        
+                    if isData():
+                        c = sys.stdin.read(1)
+
+                        if c == 'a' and Scroll>1:
+                            Scroll-=1
+
+                        if c == 'l' and Scroll<maxScroll:
+                            Scroll+=1
+                         #print(c)
+                        if c == '\x1b':         # x1b is ESC
+                           #  i=0
+                            break
+
+                        graphData(df[Scroll: Scroll+numPoints],maximum_ylim)
+
+        
+        finally:
+            termios.tcsetattr(sys.stdin, termios.TCSADRAIN, old_settings)
+        
+
             
         return 0
+
+
+
+
+    # Capturing termux api sensor data using generatir function yeilding api stream by line
 
     try:
 
@@ -90,14 +141,18 @@ def main():
                                 maximum_ylim = absolute[col].max()
                         index+=1
 
-
+                       # print(df)
+                       #
                         if(index>numPoints):
                             graphData(df[-numPoints:],maximum_ylim)
                         else:
+                        
                             graphData(df,maximum_ylim)
 
                             
                    # print(df)
+
+    # once keyboard exception terminates generator loop
     except:
         print("\n\nReading has been completed.\n")
         print("Would you like to save the data from this session? y/n: ")
@@ -186,12 +241,12 @@ def graphData(df,maximum):
     
     plt.title("acceleration vs time")
     plt.xlabel("time (s)")
-    plt.ylabel("acceleration m/s^2")
+    plt.ylabel("acceleration (m/s^2)")
     
-    plt.figsize(64,36)
+    plt.figsize(72,32)
 
     plt.clt()
-    #plt.sleep(0.02)
+  #  plt.sleep(0.1)
     plt.show()
     plt.clp()
 
