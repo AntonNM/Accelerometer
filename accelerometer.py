@@ -67,8 +67,6 @@ def main():
         delay = df["time"].iat[1] - df["time"].iat[0]
         numPoints = int((1/delay)-1)
 
-        print(numPoints)
-        input()
 
         maxScroll = len(df.index)-numPoints-1
 
