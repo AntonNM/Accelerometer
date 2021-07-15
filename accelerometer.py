@@ -248,6 +248,8 @@ def graphData(df,maximum):
     plt.show()
     plt.clp()
 
+    print (df[["dX","dY","dZ"]][-1:])
+
 
 def integrate(y1, y2, deltaX):
 
